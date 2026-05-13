@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Database Design — Sazzad Ibna Mahfuz</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--cyan:#00FFD1;--purple:#7B61FF;--green:#22C55E;--red:#EF4444;--amber:#F59E0B;--blue:#3B82F6;--bg:#07090D;--bg2:#0D1117;--bg3:#161B22;--border:rgba(0,255,209,0.12);--text:#E6EDF3;--muted:#7D8590}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
+header{background:rgba(13,17,23,.95);border-bottom:0.5px solid var(--border);padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10;backdrop-filter:blur(12px)}
+.logo{font-family:'Orbitron',monospace;font-size:.9rem;color:var(--amber)}
+.back{color:var(--muted);text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:.75rem;transition:color .2s}.back:hover{color:var(--cyan)}
+main{max-width:1300px;margin:0 auto;padding:2rem}
+h1{font-family:'Orbitron',monospace;font-size:1.6rem;font-weight:700;margin-bottom:.25rem}
+.subtitle{color:var(--muted);font-size:.85rem;font-family:'JetBrains Mono',monospace;margin-bottom:2rem}
+.tabs{display:flex;gap:.5rem;margin-bottom:2rem;border-bottom:0.5px solid var(--border)}
+.tab-btn{padding:.6rem 1.2rem;border:none;background:transparent;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:.75rem;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;margin-bottom:-0.5px}
+.tab-btn.active{color:var(--amber);border-bottom-color:var(--amber)}
+.tab-pane{display:none}.tab-pane.active{display:block}
+.card{background:var(--bg3);border:0.5px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1rem}
+.card-title{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--cyan);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:750px){.grid2{grid-template-columns:1fr}}
+.code-block{background:var(--bg2);border-radius:8px;padding:1rem;font-family:'JetBrains Mono',monospace;font-size:.72rem;line-height:1.75;overflow-x:auto;border:0.5px solid rgba(255,255,255,.06)}
+.kw{color:#FF79C6}.fn{color:#50FA7B}.cn{color:#BD93F9}.cm{color:#6272A4;font-style:italic}.st{color:#F1FA8C}.nm{color:#FFB86C}.ty{color:#8BE9FD}
+/* ER Diagram */
+#erCanvas{display:block;width:100%;border-radius:8px;background:var(--bg2)}
+/* SQL console */
+.sql-console{background:var(--bg2);border-radius:8px;overflow:hidden;border:0.5px solid var(--border)}
+.sql-prompt{display:flex;align-items:center;padding:.6rem .75rem;border-bottom:0.5px solid var(--border);gap:.5rem}
+.sql-prompt input{flex:1;background:transparent;border:none;color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:.78rem;outline:none}
+.sql-run{padding:.3rem .8rem;border:0.5px solid var(--border);border-radius:4px;background:rgba(0,255,209,.06);color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:.7rem;cursor:pointer;transition:all .2s}
+.sql-run:hover{background:rgba(0,255,209,.15)}
+.sql-output{padding:.75rem;min-height:80px;max-height:240px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:.72rem}
+.sql-table{width:100%;border-collapse:collapse;font-size:.72rem}
+.sql-table th{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--amber);text-transform:uppercase;padding:.35rem .6rem;text-align:left;border-bottom:0.5px solid var(--border);background:rgba(245,158,11,.06)}
+.sql-table td{padding:.32rem .6rem;border-bottom:0.5px solid rgba(255,255,255,.04);color:var(--text)}
+.sql-table tr:hover td{background:rgba(255,255,255,.02)}
+.query-btn{padding:.4rem .9rem;border:0.5px solid var(--border);border-radius:6px;background:transparent;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:.68rem;cursor:pointer;transition:all .2s;margin:.2rem}
+.query-btn:hover,.query-btn.active{border-color:var(--amber);color:var(--amber);background:rgba(245,158,11,.06)}
+/* Normalization */
+.norm-step{display:flex;align-items:flex-start;gap:1rem;margin-bottom:.75rem}
+.norm-badge{background:rgba(0,255,209,.1);border:0.5px solid var(--cyan);border-radius:6px;padding:.25rem .6rem;font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--cyan);flex-shrink:0;min-width:40px;text-align:center}
+.norm-text{font-size:.82rem;color:var(--muted);line-height:1.6}
+.norm-text strong{color:var(--text)}
+footer{text-align:center;padding:2rem;font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--muted)}
+footer a{color:var(--cyan);text-decoration:none}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">DATABASE DESIGN</div>
+  <span style="font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted)">MySQL 8.0 · ER Modelling · SQL · HAMK · Team 7</span>
+  <a href="../../index.html" class="back">← Portfolio</a>
+</header>
+<main>
+  <h1>Student Course Registration System</h1>
+  <p class="subtitle">// Database Design &amp; Programming — HAMK · MySQL 8.0 · Team 7: Sazzad, Iram, Enamul, Sabiha</p>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('er')">ER Diagram</button>
+    <button class="tab-btn" onclick="showTab('console')">SQL Console</button>
+    <button class="tab-btn" onclick="showTab('norm')">Normalisation</button>
+    <button class="tab-btn" onclick="showTab('ddl')">DDL / DML</button>
+  </div>
+
+  <!-- ── ER DIAGRAM ── -->
+  <div class="tab-pane active" id="tab-er">
+    <div class="card">
+      <div class="card-title">Entity–Relationship Diagram — Crow's Foot Notation</div>
+      <canvas id="erCanvas" height="480"></canvas>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">Entities &amp; Relationships</div>
+        <table style="width:100%;border-collapse:collapse;font-size:.8rem">
+          <thead><tr style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted)"><td style="padding:.3rem .5rem">Entity</td><td>Type</td><td>Key</td></tr></thead>
+          <tbody id="entityTable"></tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">Relationships</div>
+        <div id="relList" style="font-size:.8rem;line-height:2;font-family:'JetBrains Mono',monospace"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SQL CONSOLE ── -->
+  <div class="tab-pane" id="tab-console">
+    <div class="card">
+      <div class="card-title">Interactive SQL Query Runner</div>
+      <div style="margin-bottom:.75rem;flex-wrap:wrap;display:flex">
+        <button class="query-btn active" onclick="runQuery('students')">SELECT students</button>
+        <button class="query-btn" onclick="runQuery('courses')">SELECT courses</button>
+        <button class="query-btn" onclick="runQuery('enrollment')">SELECT enrollment</button>
+        <button class="query-btn" onclick="runQuery('join')">JOIN transcript</button>
+        <button class="query-btn" onclick="runQuery('groupby')">GROUP BY course</button>
+        <button class="query-btn" onclick="runQuery('having')">HAVING count &gt; 1</button>
+        <button class="query-btn" onclick="runQuery('subquery')">Subquery grade=A</button>
+        <button class="query-btn" onclick="runQuery('gpa')">Avg GPA/course</button>
+      </div>
+      <div class="sql-console">
+        <div class="sql-prompt">
+          <span style="color:var(--amber);font-family:'JetBrains Mono',monospace;font-size:.8rem">mysql&gt;</span>
+          <input id="sqlInput" type="text" value="SELECT * FROM students;" spellcheck="false">
+          <button class="sql-run" onclick="execSQL()">▶ Run</button>
+        </div>
+        <div class="sql-output" id="sqlOutput"></div>
+      </div>
+      <div style="font-size:.7rem;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:.5rem">Database: <span style="color:var(--cyan)">studentregistration</span> · Engine: <span style="color:var(--cyan)">MySQL 8.0</span> · Tables: students, instructors, courses, enrollment</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Live Stats</div>
+      <div style="height:220px"><canvas id="statsChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── NORMALISATION ── -->
+  <div class="tab-pane" id="tab-norm">
+    <div class="card">
+      <div class="card-title">Normalisation Proof — 1NF → 2NF → 3NF</div>
+      <div class="norm-step"><div class="norm-badge">1NF</div><div class="norm-text"><strong>Remove repeating groups.</strong> Each student record holds single (atomic) values per column. Phone numbers extracted to separate STUDENT_PHONE table. No multi-valued fields remain.</div></div>
+      <div class="norm-step"><div class="norm-badge">2NF</div><div class="norm-text"><strong>Remove partial dependencies.</strong> Every non-key attribute depends on the <em>whole</em> primary key. SECTION uses composite PK (CourseID, SectionNo) — all section attributes depend on both parts.</div></div>
+      <div class="norm-step"><div class="norm-badge">3NF</div><div class="norm-text"><strong>Remove transitive dependencies.</strong> Instructor data separated into its own table — no student attribute transitively depends on InstructorID. GPA is a derived attribute, not stored.</div></div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">Schema Diagram (Relational)</div>
+        <canvas id="schemaCanvas" height="320"></canvas>
+      </div>
+      <div class="card">
+        <div class="card-title">Constraints Applied</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.75rem;line-height:2.1">
+          <div>🔑 PRIMARY KEY on all tables</div>
+          <div>🔗 FOREIGN KEY + ON DELETE CASCADE</div>
+          <div>✅ UNIQUE on Email columns</div>
+          <div>🔢 CHECK (Credits &gt; 0)</div>
+          <div>🚫 NOT NULL on Name, Email</div>
+          <div>⚠️ Composite PK: SECTION(CourseID, SectionNo)</div>
+          <div>⚠️ Composite PK: ENROLLMENT(StudentID, CourseID, SectionNo)</div>
+          <div style="margin-top:.5rem;color:var(--muted)">No student can register for the same section twice.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── DDL / DML ── -->
+  <div class="tab-pane" id="tab-ddl">
+    <div class="card">
+      <div class="card-title">DDL — CREATE TABLE statements</div>
+      <div class="code-block"><span class="kw">CREATE TABLE</span> <span class="ty">students</span> (
+    StudentID  <span class="cn">INT</span>          <span class="kw">PRIMARY KEY</span>,
+    Name       <span class="cn">VARCHAR(100)</span> <span class="kw">NOT NULL</span>,
+    Email      <span class="cn">VARCHAR(100)</span> <span class="kw">UNIQUE NOT NULL</span>,
+    Major      <span class="cn">VARCHAR(50)</span>,
+    Year       <span class="cn">VARCHAR(20)</span>
+);
+
+<span class="kw">CREATE TABLE</span> <span class="ty">instructors</span> (
+    InstructorID <span class="cn">INT</span>          <span class="kw">PRIMARY KEY</span>,
+    Name         <span class="cn">VARCHAR(100)</span> <span class="kw">NOT NULL</span>,
+    Email        <span class="cn">VARCHAR(100)</span> <span class="kw">UNIQUE NOT NULL</span>,
+    Department   <span class="cn">VARCHAR(50)</span>
+);
+
+<span class="kw">CREATE TABLE</span> <span class="ty">courses</span> (
+    CourseID     <span class="cn">INT</span>          <span class="kw">PRIMARY KEY</span>,
+    CourseName   <span class="cn">VARCHAR(100)</span> <span class="kw">NOT NULL</span>,
+    Credits      <span class="cn">INT</span>          <span class="kw">CHECK</span> (Credits &gt; <span class="nm">0</span>),
+    InstructorID <span class="cn">INT</span>,
+    <span class="kw">FOREIGN KEY</span> (InstructorID) <span class="kw">REFERENCES</span> instructors(InstructorID)
+        <span class="kw">ON DELETE SET NULL ON UPDATE CASCADE</span>
+);
+
+<span class="kw">CREATE TABLE</span> <span class="ty">enrollment</span> (
+    EnrollmentID <span class="cn">INT</span>         <span class="kw">PRIMARY KEY</span>,
+    StudentID    <span class="cn">INT</span>,
+    CourseID     <span class="cn">INT</span>,
+    Semester     <span class="cn">VARCHAR(20)</span>,
+    Grade        <span class="cn">VARCHAR(2)</span>,
+    <span class="kw">FOREIGN KEY</span> (StudentID) <span class="kw">REFERENCES</span> students(StudentID)
+        <span class="kw">ON DELETE CASCADE ON UPDATE CASCADE</span>,
+    <span class="kw">FOREIGN KEY</span> (CourseID) <span class="kw">REFERENCES</span> courses(CourseID)
+        <span class="kw">ON DELETE CASCADE ON UPDATE CASCADE</span>
+);</div>
+    </div>
+    <div class="card" style="margin-top:1rem">
+      <div class="card-title">DML — Sample INSERT statements</div>
+      <div class="code-block"><span class="kw">INSERT INTO</span> <span class="ty">students</span> <span class="kw">VALUES</span>
+(<span class="nm">10566</span>, <span class="st">'Enamul Choton'</span>,       <span class="st">'enamulchoton@gmail.com'</span>,  <span class="st">'Robotics'</span>, <span class="st">'2024'</span>),
+(<span class="nm">100255</span>,<span class="st">'Iram Tanvir Mahtab'</span>,  <span class="st">'iramtanvir3@gmail.com'</span>,   <span class="st">'Robotics'</span>, <span class="st">'2024'</span>),
+(<span class="nm">100355</span>,<span class="st">'Shazzad'</span>,             <span class="st">'shazzad@gmail.com'</span>,        <span class="st">'Robotics'</span>, <span class="st">'2024'</span>),
+(<span class="nm">100655</span>,<span class="st">'Rafi Ahmed'</span>,          <span class="st">'rafiahmed@gmail.com'</span>,      <span class="st">'Robotics'</span>, <span class="st">'2024'</span>),
+(<span class="nm">106661</span>,<span class="st">'Sabiha'</span>,              <span class="st">'sabiha@gmail.com'</span>,         <span class="st">'Robotics'</span>, <span class="st">'2024'</span>);
+
+<span class="kw">INSERT INTO</span> <span class="ty">instructors</span> <span class="kw">VALUES</span>
+(<span class="nm">1</span>, <span class="st">'Pacheo Fernando'</span>, <span class="st">'pacheo.fernendo@hamk.fi'</span>, <span class="st">'Computer Science'</span>),
+(<span class="nm">2</span>, <span class="st">'Miika Sorvali'</span>,   <span class="st">'miika.sorvali@hamk.fi'</span>,   <span class="st">'Mathematics'</span>),
+(<span class="nm">3</span>, <span class="st">'Menhaz Khan'</span>,     <span class="st">'mehnaz.khan@hamk.fi'</span>,     <span class="st">'Information Systems'</span>);
+
+<span class="kw">INSERT INTO</span> <span class="ty">courses</span> <span class="kw">VALUES</span>
+(<span class="nm">12235</span>, <span class="st">'Linear Algebra'</span>,       <span class="nm">3</span>, <span class="nm">2</span>),
+(<span class="nm">20065</span>, <span class="st">'Information Security'</span>, <span class="nm">3</span>, <span class="nm">3</span>),
+(<span class="nm">30001</span>, <span class="st">'Database Systems'</span>,     <span class="nm">3</span>, <span class="nm">1</span>),
+(<span class="nm">50043</span>, <span class="st">'Data Structures'</span>,      <span class="nm">4</span>, <span class="nm">1</span>),
+(<span class="nm">56933</span>, <span class="st">'Operating Systems'</span>,    <span class="nm">4</span>, <span class="nm">1</span>);</div>
+    </div>
+  </div>
+</main>
+<footer>Database Design · <a href="https://github.com/sazzadmahfuz/database-design-project">github.com/sazzadmahfuz/database-design-project</a> · MySQL 8.0 · HAMK</footer>
+
+<script>
+
+// roundRect polyfill for older browsers
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r){
+    this.beginPath();this.moveTo(x+r,y);this.lineTo(x+w-r,y);
+    this.arcTo(x+w,y,x+w,y+r,r);this.lineTo(x+w,y+h-r);
+    this.arcTo(x+w,y+h,x+w-r,y+h,r);this.lineTo(x+r,y+h);
+    this.arcTo(x,y+h,x,y+h-r,r);this.lineTo(x,y+r);
+    this.arcTo(x,y,x+r,y,r);this.closePath();return this;
+  };
+}
+function showTab(id){document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['er','console','norm','ddl'][i]===id));document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));document.getElementById('tab-'+id).classList.add('active');}
+
+// ── ER DIAGRAM ──
+const erC=document.getElementById('erCanvas');
+const erCtx=erC.getContext('2d');
+function drawER(){
+  erC.width=erC.offsetWidth||900;erC.height=480;
+  const W=erC.width,H=480;
+  erCtx.fillStyle='#0D1117';erCtx.fillRect(0,0,W,H);
+  // grid
+  erCtx.strokeStyle='rgba(245,158,11,.03)';erCtx.lineWidth=1;
+  for(let x=0;x<W;x+=60){erCtx.beginPath();erCtx.moveTo(x,0);erCtx.lineTo(x,H);erCtx.stroke()}
+  for(let y=0;y<H;y+=60){erCtx.beginPath();erCtx.moveTo(0,y);erCtx.lineTo(W,y);erCtx.stroke()}
+  const entities={DEPARTMENT:[W*.15,H*.2],STUDENT:[W*.5,H*.2],INSTRUCTOR:[W*.83,H*.2],COURSE:[W*.3,H*.55],SECTION:[W*.5,H*.55],ENROLLMENT:[W*.5,H*.82],STUDENT_PHONE:[W*.72,H*.55]};
+  const colors={DEPARTMENT:'#F59E0B',STUDENT:'#00FFD1',INSTRUCTOR:'#7B61FF',COURSE:'#3B82F6',SECTION:'#22C55E',ENROLLMENT:'#EF4444',STUDENT_PHONE:'#EC4899'};
+  const links=[['DEPARTMENT','COURSE','1:N offers'],['DEPARTMENT','INSTRUCTOR','1:N employs'],['COURSE','SECTION','1:N has'],['INSTRUCTOR','SECTION','1:N teaches'],['STUDENT','ENROLLMENT','1:N enrolls'],['SECTION','ENROLLMENT','1:N in'],['STUDENT','STUDENT_PHONE','1:N has']];
+  links.forEach(([a,b,label])=>{
+    const [ax,ay]=entities[a],[bx,by]=entities[b];
+    erCtx.beginPath();erCtx.moveTo(ax,ay);erCtx.lineTo(bx,by);erCtx.strokeStyle='rgba(100,120,150,.3)';erCtx.lineWidth=1.5;erCtx.stroke();
+    const mx=(ax+bx)/2,my=(ay+by)/2;erCtx.fillStyle='rgba(125,133,144,.55)';erCtx.font='9px JetBrains Mono,monospace';erCtx.textAlign='center';erCtx.fillText(label,mx,my-4);
+  });
+  const weakEntities=new Set(['SECTION','STUDENT_PHONE','ENROLLMENT']);
+  Object.entries(entities).forEach(([name,[ex,ey]])=>{
+    const c=colors[name];const isWeak=weakEntities.has(name);
+    const w=90,h=34;
+    erCtx.fillStyle=c+'18';erCtx.strokeStyle=c;erCtx.lineWidth=isWeak?1.2:2;
+    if(isWeak){erCtx.setLineDash([4,3]);}
+    erCtx.beginPath();erCtx.roundRect(ex-w/2,ey-h/2,w,h,6);erCtx.fill();erCtx.stroke();erCtx.setLineDash([]);
+    erCtx.fillStyle='#fff';erCtx.font=`bold 11px DM Sans,sans-serif`;erCtx.textAlign='center';erCtx.textBaseline='middle';erCtx.fillText(name,ex,ey);
+    if(isWeak){erCtx.strokeStyle=c+'44';erCtx.lineWidth=.8;erCtx.beginPath();erCtx.roundRect(ex-w/2+3,ey-h/2+3,w-6,h-6,4);erCtx.stroke();}
+  });
+  erCtx.textAlign='left';erCtx.textBaseline='alphabetic';
+  erCtx.fillStyle='rgba(0,255,209,.5)';erCtx.font='10px Orbitron,monospace';erCtx.fillText('ER DIAGRAM — Crow\'s Foot Notation',12,22);
+  erCtx.fillStyle='rgba(125,133,144,.5)';erCtx.font='9px JetBrains Mono,monospace';erCtx.fillText('Dashed = Weak Entity',12,36);
+}
+window.addEventListener('resize',drawER);
+document.addEventListener('DOMContentLoaded',function(){drawER();drawSchema();runQuery('students');});
+document.getElementById('entityTable').innerHTML=[['STUDENT','Strong','StudentID (PK)'],['INSTRUCTOR','Strong','InstructorID (PK)'],['DEPARTMENT','Strong','DeptID (PK)'],['COURSE','Strong','CourseID (PK)'],['SECTION','Weak','(CourseID, SectionNo)'],['ENROLLMENT','Associative','(StudentID, CourseID, SectionNo)'],['STUDENT_PHONE','Multi-value','(StudentID, PhoneNumber)']].map(([n,t,k])=>`<tr style="border-bottom:0.5px solid rgba(255,255,255,.04)"><td style="padding:.28rem .5rem;font-family:'JetBrains Mono',monospace;font-size:.72rem">${n}</td><td style="font-size:.7rem;color:var(--muted)">${t}</td><td style="font-size:.68rem;color:var(--cyan);font-family:'JetBrains Mono',monospace">${k}</td></tr>`).join('');
+document.getElementById('relList').innerHTML=['DEPARTMENT → COURSE &nbsp;&nbsp; 1:N  (offers)','DEPARTMENT → INSTRUCTOR  1:N  (employs)','COURSE → SECTION &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1:N  (has)','INSTRUCTOR → SECTION &nbsp;&nbsp; 1:N  (teaches)','STUDENT → ENROLLMENT &nbsp;&nbsp; 1:N','SECTION → ENROLLMENT &nbsp;&nbsp; 1:N','STUDENT → STUDENT_PHONE  1:N'].map(r=>`<div style="color:var(--muted)">${r}</div>`).join('');
+
+// ── SQL DATA ──
+const DB={
+  students:[{StudentID:10566,Name:'Enamul Choton',Email:'enamulchoton@gmail.com',Major:'Robotics',Year:'2024'},{StudentID:100255,Name:'Iram Tanvir Mahtab',Email:'iramtanvir3@gmail.com',Major:'Robotics',Year:'2024'},{StudentID:100355,Name:'Shazzad',Email:'shazzad@gmail.com',Major:'Robotics',Year:'2024'},{StudentID:100655,Name:'Rafi Ahmed',Email:'rafiahmed@gmail.com',Major:'Robotics',Year:'2024'},{StudentID:106661,Name:'Sabiha',Email:'sabiha@gmail.com',Major:'Robotics',Year:'2024'}],
+  instructors:[{InstructorID:1,Name:'Pacheo Fernando',Email:'pacheo@hamk.fi',Department:'Computer Science'},{InstructorID:2,Name:'Miika Sorvali',Email:'miika@hamk.fi',Department:'Mathematics'},{InstructorID:3,Name:'Menhaz Khan',Email:'menhaz@hamk.fi',Department:'Information Systems'}],
+  courses:[{CourseID:12235,CourseName:'Linear Algebra',Credits:3,InstructorID:2},{CourseID:20065,CourseName:'Information Security',Credits:3,InstructorID:3},{CourseID:30001,CourseName:'Database Systems',Credits:3,InstructorID:1},{CourseID:50043,CourseName:'Data Structures',Credits:4,InstructorID:1},{CourseID:56933,CourseName:'Operating Systems',Credits:4,InstructorID:1}],
+  enrollment:[{EnrollmentID:1,StudentID:100255,CourseID:30001,Semester:'Fall 2025',Grade:'A'},{EnrollmentID:2,StudentID:100255,CourseID:56933,Semester:'Fall 2025',Grade:'B+'},{EnrollmentID:3,StudentID:10566,CourseID:30001,Semester:'Fall 2025',Grade:'A-'},{EnrollmentID:4,StudentID:10566,CourseID:20065,Semester:'Fall 2025',Grade:'B'},{EnrollmentID:5,StudentID:100355,CourseID:12235,Semester:'Fall 2025',Grade:'A'},{EnrollmentID:6,StudentID:106661,CourseID:30001,Semester:'Fall 2025',Grade:'B'},{EnrollmentID:7,StudentID:100655,CourseID:50043,Semester:'Spring 2025',Grade:'A'},{EnrollmentID:8,StudentID:100655,CourseID:20065,Semester:'Spring 2025',Grade:'A'},{EnrollmentID:9,StudentID:10566,CourseID:50043,Semester:'Spring 2025',Grade:'B+'},{EnrollmentID:10,StudentID:100355,CourseID:30001,Semester:'Spring 2025',Grade:'A-'}]
+};
+const QUERIES={
+  students:{sql:'SELECT * FROM students;',fn:()=>DB.students},
+  courses:{sql:'SELECT * FROM courses;',fn:()=>DB.courses},
+  enrollment:{sql:'SELECT * FROM enrollment;',fn:()=>DB.enrollment},
+  join:{sql:`SELECT s.Name AS Student, c.CourseName, i.Name AS Instructor,\n  e.Semester, e.Grade\nFROM students s\nJOIN enrollment e ON s.StudentID = e.StudentID\nJOIN courses c ON e.CourseID = c.CourseID\nJOIN instructors i ON c.InstructorID = i.InstructorID\nORDER BY s.Name;`,fn:()=>DB.enrollment.map(e=>{const s=DB.students.find(x=>x.StudentID===e.StudentID);const c=DB.courses.find(x=>x.CourseID===e.CourseID);const i=DB.instructors.find(x=>x.InstructorID===c?.InstructorID);return{Student:s?.Name,CourseName:c?.CourseName,Instructor:i?.Name,Semester:e.Semester,Grade:e.Grade};})},
+  groupby:{sql:`SELECT c.CourseName,\n  COUNT(e.StudentID) AS Total_Students\nFROM courses c\nLEFT JOIN enrollment e ON c.CourseID = e.CourseID\nGROUP BY c.CourseName;`,fn:()=>DB.courses.map(c=>({CourseName:c.CourseName,Total_Students:DB.enrollment.filter(e=>e.CourseID===c.CourseID).length}))},
+  having:{sql:`SELECT c.CourseName,\n  COUNT(e.StudentID) AS Total_Students\nFROM courses c JOIN enrollment e ON c.CourseID=e.CourseID\nGROUP BY c.CourseName HAVING COUNT(e.StudentID) > 1;`,fn:()=>DB.courses.map(c=>({CourseName:c.CourseName,Total_Students:DB.enrollment.filter(e=>e.CourseID===c.CourseID).length})).filter(r=>r.Total_Students>1)},
+  subquery:{sql:`SELECT Name, Email FROM students\nWHERE StudentID IN (\n  SELECT StudentID FROM enrollment WHERE Grade = 'A'\n);`,fn:()=>{const ids=new Set(DB.enrollment.filter(e=>e.Grade==='A').map(e=>e.StudentID));return DB.students.filter(s=>ids.has(s.StudentID)).map(s=>({Name:s.Name,Email:s.Email}));}},
+  gpa:{sql:`SELECT c.CourseName,\n  ROUND(AVG(CASE Grade WHEN 'A' THEN 4.0 WHEN 'A-' THEN 3.7\n  WHEN 'B+' THEN 3.3 WHEN 'B' THEN 3.0 ELSE 0 END),2) AS Avg_GPA\nFROM courses c\nJOIN enrollment e ON c.CourseID=e.CourseID\nGROUP BY c.CourseName;`,fn:()=>DB.courses.map(c=>{const rows=DB.enrollment.filter(e=>e.CourseID===c.CourseID);const gpas={A:4.0,'A-':3.7,'B+':3.3,B:3.0,C:2.0};const avg=rows.length?rows.reduce((s,e)=>s+(gpas[e.Grade]||0),0)/rows.length:0;return{CourseName:c.CourseName,Avg_GPA:avg.toFixed(2)};}).filter(r=>r.Avg_GPA>0)}
+};
+
+function renderTable(data){
+  if(!data||!data.length)return'<span style="color:var(--muted)">Empty result set (0 rows)</span>';
+  const cols=Object.keys(data[0]);
+  return`<table class="sql-table"><thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${data.map(row=>`<tr>${cols.map(c=>`<td>${row[c]??'NULL'}</td>`).join('')}</tr>`).join('')}</tbody></table><div style="font-size:.65rem;color:var(--muted);margin-top:.4rem;font-family:'JetBrains Mono',monospace">${data.length} row(s) in set</div>`;
+}
+
+function runQuery(key){
+  document.querySelectorAll('.query-btn').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');
+  const q=QUERIES[key];
+  document.getElementById('sqlInput').value=q.sql;
+  const out=document.getElementById('sqlOutput');
+  out.innerHTML=renderTable(q.fn());
+}
+
+function execSQL(){
+  const sql=document.getElementById('sqlInput').value.trim().toLowerCase();
+  const out=document.getElementById('sqlOutput');
+  if(sql.includes('students'))out.innerHTML=renderTable(QUERIES.students.fn());
+  else if(sql.includes('courses'))out.innerHTML=renderTable(QUERIES.courses.fn());
+  else if(sql.includes('enrollment'))out.innerHTML=renderTable(QUERIES.enrollment.fn());
+  else out.innerHTML='<span style="color:var(--amber)">Query parsed — use the preset buttons for live results.</span>';
+}
+runQuery('students');
+
+// Stats chart
+new Chart(document.getElementById('statsChart').getContext('2d'),{type:'bar',data:{labels:['Linear Algebra','Info Security','DB Systems','Data Structures','Operating Sys'],datasets:[{label:'Enrolled Students',data:DB.courses.map(c=>DB.enrollment.filter(e=>e.CourseID===c.CourseID).length),backgroundColor:['rgba(0,255,209,.6)','rgba(123,97,255,.6)','rgba(59,130,246,.6)','rgba(245,158,11,.6)','rgba(239,68,68,.6)'],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:500},plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#7D8590',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#7D8590',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'},min:0,max:6}}}});
+
+// Schema canvas
+const scC=document.getElementById('schemaCanvas');const scCtx=scC.getContext('2d');
+function drawSchema(){
+  scC.width=scC.offsetWidth||400;scC.height=320;const W=scC.width;
+  scCtx.fillStyle='#0D1117';scCtx.fillRect(0,0,W,320);
+  const tables=[{name:'students',x:.05,y:.08,fields:['StudentID PK','Name','Email UQ','Major','Year']},{name:'courses',x:.55,y:.08,fields:['CourseID PK','CourseName','Credits','InstructorID FK']},{name:'instructors',x:.55,y:.55,fields:['InstructorID PK','Name','Email UQ','Department']},{name:'enrollment',x:.05,y:.55,fields:['EnrollmentID PK','StudentID FK','CourseID FK','Semester','Grade']}];
+  const colors=['#00FFD1','#3B82F6','#7B61FF','#EF4444'];
+  tables.forEach((t,i)=>{
+    const tx=t.x*W,ty=t.y*320,tw=W*.38,th=t.fields.length*18+28;
+    scCtx.fillStyle=colors[i]+'22';scCtx.strokeStyle=colors[i];scCtx.lineWidth=1.5;scCtx.beginPath();scCtx.roundRect(tx,ty,tw,th,6);scCtx.fill();scCtx.stroke();
+    scCtx.fillStyle=colors[i];scCtx.font='bold 10px DM Sans,monospace';scCtx.textAlign='left';scCtx.fillText(t.name.toUpperCase(),tx+8,ty+16);
+    scCtx.strokeStyle=colors[i]+'44';scCtx.lineWidth=.5;scCtx.beginPath();scCtx.moveTo(tx,ty+22);scCtx.lineTo(tx+tw,ty+22);scCtx.stroke();
+    t.fields.forEach((f,j)=>{scCtx.fillStyle=f.includes('PK')?'#fff':f.includes('FK')?colors[i]:colors[i]+'99';scCtx.font=`${f.includes('PK')||f.includes('FK')?'bold ':''}9px JetBrains Mono,monospace`;scCtx.fillText(f,tx+8,ty+34+j*18);});
+  });
+  scCtx.textAlign='left';
+}
+window.addEventListener('resize',drawSchema);drawSchema();
+</script>
+</body>
+</html>
