@@ -1,4 +1,4 @@
-# 🗄️ Database Design & Student Registration System
+# Database Design & Student Registration System
 
 <div align="center">
 
